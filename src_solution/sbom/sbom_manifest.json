@@ -1,0 +1,88 @@
+{
+  "timestamp": "2026-05-17T00:00:00Z",
+  "tcb": {
+    "serialNumber": "urn:uuid:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    "metadata": {
+      "type": "application",
+      "name": "abu-tcb",
+      "version": "1.0.0"
+    },
+    "components": [
+      {
+        "type": "application",
+        "name": "abu-safety-controller",
+        "version": "1.0.0",
+        "bom_ref": "abu-safety-controller",
+        "description": "Доверенная вычислительная база (ДВБ) — контроллер безопасности АБУ"
+      }
+    ],
+    "dependencies": [
+      {
+        "ref": "abu-safety-controller",
+        "dependsOn": []
+      }
+    ]
+  },
+  "other": {
+    "serialNumber": "urn:uuid:bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+    "metadata": {
+      "type": "application",
+      "name": "abu-non-tcb-deps",
+      "version": "1.0.0"
+    },
+    "components": [
+      {
+        "type": "library",
+        "name": "fastapi",
+        "version": "0.115.0",
+        "bom_ref": "pkg:pypi/fastapi@0.115.0"
+      },
+      {
+        "type": "library",
+        "name": "uvicorn",
+        "version": "0.32.0",
+        "bom_ref": "pkg:pypi/uvicorn@0.32.0"
+      },
+      {
+        "type": "library",
+        "name": "pydantic",
+        "version": "2.10.0",
+        "bom_ref": "pkg:pypi/pydantic@2.10.0"
+      },
+      {
+        "type": "library",
+        "name": "httpx",
+        "version": "0.28.0",
+        "bom_ref": "pkg:pypi/httpx@0.28.0"
+      },
+      {
+        "type": "library",
+        "name": "numpy",
+        "version": "2.0.0",
+        "bom_ref": "pkg:pypi/numpy@2.0.0"
+      }
+    ],
+    "dependencies": [
+      {
+        "ref": "pkg:pypi/fastapi@0.115.0",
+        "dependsOn": []
+      },
+      {
+        "ref": "pkg:pypi/uvicorn@0.32.0",
+        "dependsOn": []
+      },
+      {
+        "ref": "pkg:pypi/pydantic@2.10.0",
+        "dependsOn": []
+      },
+      {
+        "ref": "pkg:pypi/httpx@0.28.0",
+        "dependsOn": []
+      },
+      {
+        "ref": "pkg:pypi/numpy@2.0.0",
+        "dependsOn": []
+      }
+    ]
+  }
+}

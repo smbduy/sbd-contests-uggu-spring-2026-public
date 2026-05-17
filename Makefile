@@ -2,7 +2,9 @@
 PIPENV ?= pipenv
 export PIPENV_VENV_IN_PROJECT=1
 
-.PHONY: install tests-all diagrams prepare-cert-bundle certify-abu evaluate-score docker-build docker-up docker-down
+.PHONY: install tests-all diagrams prepare-cert-bundle certify-abu evaluate-score \
+        evaluate-shard-plan evaluate-shard evaluate-distributed-aggregate \
+        evaluate-distributed-local docker-build docker-up docker-down
 
 # Установка зависимостей из Pipfile (виртуальное окружение в .venv/)
 install:
@@ -23,6 +25,19 @@ prepare-cert-bundle:
 
 certify-abu: install prepare-cert-bundle
 	$(PIPENV) run python scripts/run_certification.py
+
+# Распределённая оценка: шардинг по решениям
+evaluate-shard-plan: install
+	$(PIPENV) run python scripts/evaluate_all_participant_repos.py --write-shard-plan
+
+evaluate-shard: install
+	$(PIPENV) run python scripts/evaluate_all_participant_repos.py --shard-plan evaluation/report/runs/$(RUN_ID)/shard_plan.json --shard-index $(SHARD_INDEX) --shards $(SHARDS)
+
+evaluate-distributed-aggregate: install
+	$(PIPENV) run python scripts/evaluate_all_participant_repos.py --aggregate --run-id final
+
+evaluate-distributed-local: evaluate-score
+	$(PIPENV) run python scripts/evaluate_all_participant_repos.py --local
 
 docker-build:
 	bash scripts/docker_build.sh

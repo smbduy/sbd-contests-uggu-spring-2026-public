@@ -11,7 +11,11 @@ mkdir -p "$OUT"
 
 # CycloneDX для ДВБ и прочих зависимостей: из манифеста docs/sbom_manifest.json
 # (правьте манифест и см. docs/sbom_guide.md).
-(cd "$ROOT" && pipenv run python scripts/generate_sbom_cdx.py)
+if command -v pipenv &>/dev/null; then
+  (cd "$ROOT" && pipenv run python scripts/generate_sbom_cdx.py)
+else
+  (cd "$ROOT" && python3 scripts/generate_sbom_cdx.py)
+fi
 
 cp -a "$ROOT/src_starting_point" "$OUT/source"
 mkdir -p "$OUT/sbom"

@@ -114,3 +114,54 @@ def compute_tcb_source_metrics(abu_package_root: Path) -> tuple[int, int]:
     loc = count_physical_loc(py_files)
     cc = sum_cyclomatic_complexity(py_files)
     return loc, cc
+
+
+def partition_tcb_into_domains(
+    tcb_root: Path,
+    spec: dict,
+) -> tuple[list[tuple[str, int, int]], list[str]]:
+    """Разбивает файлы ДВБ на домены по спецификации и остаток.
+
+    :param tcb_root: каталог с исходниками ДВБ
+    :param spec: словарь с ключом "domains", содержащий список
+        {"id": str, "globs": [str]}
+    :returns: (список_доменов, список_предупреждений)
+        Каждый домен — (domain_id, loc, cyclomatic_complexity)
+    """
+    import fnmatch
+
+    all_py = iter_python_files(tcb_root)
+    if not all_py:
+        return [("_residual", 0, 0)], ["пустой каталог ДВБ"]
+
+    domains_spec = spec.get("domains") or []
+    assigned: dict[str, list[Path]] = {}
+    for d in domains_spec:
+        did = d.get("id", "_unknown")
+        globs = d.get("globs") or []
+        matched: list[Path] = []
+        for g in globs:
+            for p in all_py:
+                if fnmatch.fnmatch(p.name, g) and p not in matched:
+                    matched.append(p)
+        assigned[did] = matched
+
+    # Остаток
+    used: set[Path] = set()
+    for paths in assigned.values():
+        used.update(paths)
+    residual = [p for p in all_py if p not in used]
+    if residual:
+        assigned["_residual"] = residual
+
+    warnings: list[str] = []
+    rows: list[tuple[str, int, int]] = []
+    for did, paths in assigned.items():
+        if not paths:
+            rows.append((did, 0, 0))
+            continue
+        loc = count_physical_loc(paths)
+        cc = sum_cyclomatic_complexity(paths)
+        rows.append((did, loc, cc))
+
+    return rows, warnings

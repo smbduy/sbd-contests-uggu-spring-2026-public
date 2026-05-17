@@ -27,6 +27,10 @@ TCB_EDGE_QUADRATIC = 1.8
 OTHER_SBOM_BASE = 500.0
 OTHER_EDGE_LINEAR = 0.5
 
+# Междоменные IPC-рёбра: учёт доверенных и недоверенных границ.
+DOMAIN_IPC_EDGE_UNIT = 1.0
+DOMAIN_IPC_TRUSTED_VS_UNTRUSTED_FACTOR = 2.0
+
 
 def estimate_tcb_sbom_cost(edges: int) -> float:
     """
@@ -64,6 +68,26 @@ def tcb_source_cost_addon(tcb_loc: int, tcb_cyclomatic_sum: int) -> float:
     )
 
 
+def estimate_domain_ipc_communication_cost(
+    ipc_untrusted_boundary_edges: int,
+    ipc_trusted_boundary_edges: int,
+) -> float:
+    """Стоимость междоменного IPC: недоверенные и доверенные рёбра.
+
+    Доверенное ребро стоит DOMAIN_IPC_TRUSTED_VS_UNTRUSTED_FACTOR раз дороже
+    недоверенного (больше проверок, выше требования к верификации).
+
+    :param ipc_untrusted_boundary_edges: число недоверенных IPC-рёбер
+    :param ipc_trusted_boundary_edges: число доверенных IPC-рёбер
+    """
+    return (
+        float(ipc_untrusted_boundary_edges) * DOMAIN_IPC_EDGE_UNIT
+        + float(ipc_trusted_boundary_edges)
+        * DOMAIN_IPC_EDGE_UNIT
+        * DOMAIN_IPC_TRUSTED_VS_UNTRUSTED_FACTOR
+    )
+
+
 def total_estimated_cost(
     n_tcb: int,
     n_tcb_edges: int,
@@ -72,9 +96,12 @@ def total_estimated_cost(
     *,
     tcb_loc: int = 0,
     tcb_cyclomatic_sum: int = 0,
+    ipc_untrusted_boundary_edges: int = 0,
+    ipc_trusted_boundary_edges: int = 0,
 ) -> float:
     """
-    Итоговая стоимость: SBOM_TCB (только по рёбрам E), исходники abu, SBOM_OTHER / divisor.
+    Итоговая стоимость: SBOM_TCB (только по рёбрам E), исходники abu, SBOM_OTHER / divisor,
+    междоменный IPC.
 
     Параметры n_tcb и n_other сохраняются в сигнатуре для совместимости с парсером SBOM и
     отладки; в формулу стоимости не входят.
@@ -82,7 +109,37 @@ def total_estimated_cost(
     _ = n_tcb, n_other  # метрики компонентов не штрафуются
     cost_tcb = estimate_tcb_sbom_cost(n_tcb_edges) + tcb_source_cost_addon(tcb_loc, tcb_cyclomatic_sum)
     cost_other = estimate_other_sbom_cost(n_other_edges)
-    return cost_tcb + cost_other / float(SBOM_OTHER_COST_DIVISOR)
+    cost_ipc = estimate_domain_ipc_communication_cost(
+        ipc_untrusted_boundary_edges,
+        ipc_trusted_boundary_edges,
+    )
+    return cost_tcb + cost_other / float(SBOM_OTHER_COST_DIVISOR) + cost_ipc
+
+
+def tcb_partition_verification_addon(
+    domains: list[tuple[str, int, int]],
+    incoming_allowances: dict[str, int],
+) -> tuple[float, list[float]]:
+    """Стоимость верификации разбиения ДВБ на домены.
+
+    Выпуклая по LOC на домен: стимулирует разбиение на малые домены.
+    Полином по входящим IPC-разрешениям R_d.
+
+    :param domains: список (domain_id, loc, cyclomatic_complexity)
+    :param incoming_allowances: словарь {domain_id: R_d} —
+        число разрешённых входящих междоменных IPC
+    :returns: (суммарная_стоимость, список_стоимостей_по_доменам)
+    """
+    per_domain: list[float] = []
+    for domain_id, loc, cc in domains:
+        r = incoming_allowances.get(domain_id, 0)
+        # Выпуклый вклад по LOC (квадратичный штраф за большие домены)
+        loc_cost = LOC_COST_PER_LINE * loc * (1.0 + loc / 1000.0)
+        cc_cost = CC_COST_PER_POINT * cc
+        # Полином по входящим IPC: R + 0.1 * R^2
+        r_cost = float(r) + 0.1 * float(r) * float(r)
+        per_domain.append(loc_cost + cc_cost + r_cost)
+    return sum(per_domain), per_domain
 
 
 def sbom_has_heavy_dep(sbom_path: Path, heavy_names: tuple[str, ...] = HEAVY_DV_B_DEPS) -> bool:

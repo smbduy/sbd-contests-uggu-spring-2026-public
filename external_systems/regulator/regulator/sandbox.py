@@ -3,11 +3,24 @@
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
+
+
+@dataclass(frozen=True)
+class PytestCovResult:
+    """Результат прогона pytest с покрытием."""
+
+    ok: bool
+    coverage_total: float
+    coverage_tcb: float
+    coverage_other: float
+    log: str
 
 
 def run_pytest_with_coverage(
@@ -127,3 +140,50 @@ def run_security_tests_coverage(
         cov_package=cov_package,
         fail_under=fu,
     )
+
+
+def _aggregate_tcb_other_percent(
+    log: str,
+    flat_legacy: bool = False,
+) -> tuple[float, float]:
+    """Разбивает покрытие из лога pytest-cov на ДВБ и прочее.
+
+    :param log: вывод pytest --cov-report=term-missing
+    :param flat_legacy: если True — всё считается как ДВБ
+        (для старых неразделённых макетов)
+    :returns: (coverage_tcb_percent, coverage_other_percent)
+    """
+    tcb_lines: list[tuple[int, int]] = []  # (covered, total)
+    other_lines: list[tuple[int, int]] = []
+
+    for line in log.splitlines():
+        stripped = line.strip()
+        # Совпадает с форматом pytest-cov: путь  stmts  miss  cover%
+        m = re.match(
+            r"^(abu\S+\.py)\s+(\d+)\s+(\d+)\s+(\d+)%",
+            stripped,
+        )
+        if not m:
+            continue
+        path, stmts_str, miss_str = m.group(1), m.group(2), m.group(3)
+        stmts = int(stmts_str)
+        miss = int(miss_str)
+        covered = stmts - miss
+
+        if flat_legacy:
+            tcb_lines.append((covered, stmts))
+        elif path.startswith("abu/tcb/"):
+            tcb_lines.append((covered, stmts))
+        else:
+            other_lines.append((covered, stmts))
+
+    def _pct(items: list[tuple[int, int]]) -> float:
+        if not items:
+            return 100.0
+        total_covered = sum(c for c, _ in items)
+        total_stmts = sum(t for _, t in items)
+        if total_stmts == 0:
+            return 100.0
+        return 100.0 * total_covered / total_stmts
+
+    return _pct(tcb_lines), _pct(other_lines)

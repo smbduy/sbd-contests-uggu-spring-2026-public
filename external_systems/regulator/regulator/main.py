@@ -19,7 +19,7 @@ from regulator.cost_model import (
     total_estimated_cost,
 )
 from regulator.hash_util import sha256_file
-from regulator.sandbox import run_pytest_with_coverage, run_security_tests_coverage
+from regulator.sandbox import PytestCovResult, run_pytest_with_coverage, run_security_tests_coverage
 from regulator.sbom_parse import count_sbom_metrics
 from regulator.sga_validate import load_sga, sga_document_for_response
 
@@ -55,6 +55,7 @@ class CertificationResultOut(BaseModel):
     )
     coverage_percent: float = 0.0
     security_coverage_percent: float = 0.0
+    coverage_tcb_percent: float = 0.0
     message: str = ""
     developer_company: str = ""
     firmware_label: str = ""
@@ -90,6 +91,17 @@ class SgaOut(BaseModel):
 def _repo_root() -> Path:
     """Корень репозитория (для тестов)."""
     return Path(__file__).resolve().parents[3]
+
+
+def _unpack_cov_result(result: tuple | PytestCovResult) -> tuple[bool, float, str, float]:
+    """Распаковывает результат run_pytest_with_coverage в (ok, cov_total, log, cov_tcb).
+
+    Поддерживает как кортеж (ok, cov_pct, log), так и PytestCovResult.
+    """
+    if isinstance(result, PytestCovResult):
+        return result.ok, result.coverage_total, result.log, result.coverage_tcb
+    ok, cov_pct, log = result
+    return ok, cov_pct, log, 0.0
 
 
 def process_certification(
@@ -153,6 +165,11 @@ def process_certification(
                 from regulator.tcb_metrics import compute_tcb_source_metrics
 
                 tcb_loc, tcb_cc = compute_tcb_source_metrics(abu_pkg)
+        ipc_u = ipc_t = 0
+        if manifest_path.is_file():
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            ipc_u = max(0, int(manifest.get("domain_ipc_untrusted_boundary_edges", 0)))
+            ipc_t = max(0, int(manifest.get("domain_ipc_trusted_boundary_edges", 0)))
         cost = total_estimated_cost(
             n_tcb,
             e_tcb,
@@ -160,6 +177,8 @@ def process_certification(
             e_other,
             tcb_loc=tcb_loc,
             tcb_cyclomatic_sum=tcb_cc,
+            ipc_untrusted_boundary_edges=ipc_u,
+            ipc_trusted_boundary_edges=ipc_t,
         )
         req_path = source_dir / "requirements.txt"
         cost = apply_heavy_dep_multiplier(cost, sbom_tcb, req_path)
@@ -175,9 +194,8 @@ def process_certification(
                 tcb_cyclomatic_sum=tcb_cc,
             )
 
-        manifest: dict = {}
-        if manifest_path.is_file():
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if not manifest_path.is_file():
+            manifest = {}
         fw_label = firmware_label.strip() or str(manifest.get("package_name", ""))
         tests_root = manifest.get("tests_root", "tests")
         fail_under = float(os.environ.get("REGULATOR_COV_FAIL_UNDER", "80"))
@@ -186,12 +204,14 @@ def process_certification(
         if (source_dir / tests_root / "security").is_dir():
             ignore_sec = [f"--ignore={tests_root}/security"]
 
-        ok, cov_pct, log = run_pytest_with_coverage(
-            source_dir,
-            tests_subdir=tests_root,
-            cov_package="abu",
-            fail_under=fail_under,
-            extra_pytest_args=ignore_sec or None,
+        ok, cov_pct, log, cov_tcb = _unpack_cov_result(
+            run_pytest_with_coverage(
+                source_dir,
+                tests_subdir=tests_root,
+                cov_package="abu",
+                fail_under=fail_under,
+                extra_pytest_args=ignore_sec or None,
+            )
         )
 
         if not ok:
@@ -200,7 +220,29 @@ def process_certification(
                 estimated_cost=cost,
                 certificate_id=None,
                 coverage_percent=cov_pct,
+                coverage_tcb_percent=cov_tcb,
                 message=log[-2000:] if log else "pytest failed",
+                developer_company=developer_company,
+                firmware_label=fw_label,
+                tcb_lines_of_code=tcb_loc,
+                tcb_cyclomatic_sum=tcb_cc,
+            )
+
+        # Проверка порога покрытия ДВБ (REGULATOR_TCB_COV_REQUIRED)
+        tcb_cov_required = float(
+            os.environ.get("REGULATOR_TCB_COV_REQUIRED", "0")
+        )
+        if tcb_cov_required > 0 and cov_tcb < tcb_cov_required:
+            return CertificationResultOut(
+                success=False,
+                estimated_cost=cost,
+                certificate_id=None,
+                coverage_percent=cov_pct,
+                coverage_tcb_percent=cov_tcb,
+                message=(
+                    f"покрытие ДВБ {cov_tcb:.1f}% ниже требуемого "
+                    f"{tcb_cov_required:.1f}%"
+                ),
                 developer_company=developer_company,
                 firmware_label=fw_label,
                 tcb_lines_of_code=tcb_loc,

@@ -172,6 +172,11 @@ def _security_marker_used_in_tests() -> int:
     return n
 
 
+def _c19_runtime_process_boundary(blob: str) -> bool:
+    """Эвристика: признак разделения доменов по процессам (multiprocessing/subprocess)."""
+    return "multiprocessing" in blob or "subprocess" in blob
+
+
 def score_c18_c19_solution(py_files: list[Path], blob: str) -> tuple[float, float, str, str]:
     """C18/C19: целые уровни 0–3 по признакам в коде и тестах (AST для тестов с src_solution)."""
     if not py_files and not blob.strip():

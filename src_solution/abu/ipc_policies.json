@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "allows": [
+    {"from": "http_api", "to": "safety_controller", "func": "start_mission"},
+    {"from": "http_api", "to": "safety_controller", "func": "tick_step"},
+    {"from": "http_api", "to": "safety_controller", "func": "get_status"},
+    {"from": "http_api", "to": "safety_controller", "func": "health_check"},
+    {"from": "http_api", "to": "pseudo_ai", "func": "ai_suggest"},
+    {"from": "http_api", "to": "event_log", "func": "record"},
+    {"from": "http_api", "to": "event_log", "func": "ring_snapshot"},
+    {"from": "http_api", "to": "event_log", "func": "read_full_tail"},
+    {"from": "safety_controller", "to": "pseudo_ai", "func": "regime_suggest"},
+    {"from": "safety_controller", "to": "pseudo_ai", "func": "anomaly_vibration"},
+    {"from": "safety_controller", "to": "pseudo_ai", "func": "risk_flag"},
+    {"from": "safety_controller", "to": "event_log", "func": "record"},
+    {"from": "pseudo_ai", "to": "event_log", "func": "record"}
+  ]
+}
