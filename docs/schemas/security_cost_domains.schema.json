@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-2020-12/schema",
+  "$id": "https://abu-contest/schemas/security_cost_domains.schema.json",
+  "title": "security_cost_domains",
+  "description": "Разбиение кода метрикового корня ДВБ (abu или abu/tcb) на именованные домены для суммарной стоимости верификации в Регуляторе.",
+  "type": "object",
+  "required": ["domains"],
+  "properties": {
+    "domains": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "globs"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "globs": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["tcb_domain", "glue", "mixed"]
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

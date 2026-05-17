@@ -1,0 +1,22 @@
+@startuml sequence_mission
+skinparam sequenceMessageAlign center
+title Миссия и телеметрия (при strict — проверка сертификата)
+
+actor "ЦР" as CR
+participant "АБУ" as ABU
+participant "Регулятор" as REG
+
+CR -> ABU : POST /missions
+ABU --> CR : принято
+
+loop телеметрия
+  CR -> ABU : GET /status
+  ABU --> CR : снимок телеметрии
+end
+
+note over CR, REG
+  При регистрации или strict:
+end note
+CR -> REG : GET /certificates/{id}
+REG --> CR : действителен / нет
+@enduml

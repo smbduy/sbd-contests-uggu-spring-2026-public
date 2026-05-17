@@ -1,0 +1,83 @@
+# Примеры REST (расширение VS Code REST Client / Humao REST Client).
+# Переменные: задайте в секции ниже или подставьте вручную.
+# Перед сертификацией выполните: make prepare-cert-bundle
+
+@baseReg = http://127.0.0.1:8082
+@baseCR = http://127.0.0.1:8080
+@baseAbu = http://127.0.0.1:8081
+@bundlePath = ./artifacts/abu_certification_bundle.tar.gz
+
+### Регулятор: health
+GET {{baseReg}}/api/v1/health
+
+### Регулятор: загрузка пакета (multipart) и сертификация
+POST {{baseReg}}/api/v1/certification/upload
+Content-Type: multipart/form-data; boundary=----restclient
+
+------restclient
+Content-Disposition: form-data; name="developer_company"
+
+ООО Пример Разработчик
+------restclient
+Content-Disposition: form-data; name="firmware_label"
+
+abu-starting-point
+------restclient
+Content-Disposition: form-data; name="bundle"; filename="abu_certification_bundle.tar.gz"
+Content-Type: application/gzip
+
+< {{bundlePath}}
+------restclient--
+
+### Регулятор: заявка по пути к файлу на сервере (для отладки внутри контейнера)
+# @name certPath
+POST {{baseReg}}/api/v1/certification/requests
+Content-Type: application/json
+
+{
+  "bundle_path": "/tmp/abu_certification_bundle.tar.gz",
+  "developer_company": "ООО Пример",
+  "firmware_label": "demo-fw"
+}
+
+### Регулятор: сводная таблица сертифицированных прошивок
+GET {{baseReg}}/api/v1/certification/summary
+
+### Регулятор: проверка сертификата (certificate_id = SHA-256 архива)
+GET {{baseReg}}/api/v1/certificates/da38f0778d43ebbc45f4081c3dc2c796c0716f257e9134e1a084415df50c42ca
+
+### Регулятор: SGA (цели и предположения безопасности) по certificate_id
+# Подставьте актуальный хэш после успешной сертификации
+GET {{baseReg}}/api/v1/certificates/da38f0778d43ebbc45f4081c3dc2c796c0716f257e9134e1a084415df50c42ca/sga
+
+### ЦР: контекст безопасности (политика SG/SA для парка)
+GET {{baseCR}}/api/v1/security/context
+
+### ЦР: зарегистрированные установки (SGA, поддержка)
+GET {{baseCR}}/api/v1/rigs
+
+### ЦР: health
+GET {{baseCR}}/api/v1/health
+
+### ЦР: регистрация буровой (АБУ в Docker на хосте)
+POST {{baseCR}}/api/v1/rigs
+Content-Type: application/json
+
+{
+  "rig_id": "rig-docker-1",
+  "abu_base_url": "{{baseAbu}}",
+  "certificate_id": "da38f0778d43ebbc45f4081c3dc2c796c0716f257e9134e1a084415df50c42ca"
+}
+
+### ЦР: миссия (нужна предварительная регистрация rig)
+POST {{baseCR}}/api/v1/missions
+Content-Type: application/json
+
+{
+  "rig_id": "rig-docker-1",
+  "target_depth_m": 12.5,
+  "max_rpm": 250
+}
+
+### АБУ: health (если поднят контейнер abu)
+GET {{baseAbu}}/api/v1/health

@@ -1,0 +1,26 @@
+@startuml context
+skinparam componentStyle rectangle
+title Контекст: ЦР, АБУ, Регулятор (REST)
+
+package "Цифровой_рудник_CR" {
+  [REST_API_ЦР] as CR
+}
+
+package "АБУ" {
+  [REST_API_АБУ] as ABU
+  [ПсевдоИИ_v1] as AI
+}
+
+package "Регулятор" {
+  [REST_API_Регулятор] as REG
+  [Песочница_SBOM_pytest] as SANDBOX
+}
+
+actor "Разработчик_CI" as DEV
+
+CR -down-> ABU : миссии,\nтелеметрия,\nстатус
+CR -right-> REG : проверка\nсертификата\n(strict)
+DEV -up-> REG : заявка на\nсертификацию
+REG -down-> SANDBOX
+ABU .. AI : внутри процесса
+@enduml

@@ -1,0 +1,20 @@
+@startuml tara_attack_pseudo_ai
+title TARA: путь атаки через компрометацию pseudo_ai
+
+actor Attacker as att
+boundary "Компрометация кода / данных" as comp
+component "pseudo_ai.py\n(эвристика режима)" as ai
+component "ДВБ АБУ\nконтроллер" as tcb
+usecase "SG_ADS_Controlled_operations" as sg
+
+att --> comp : внедрение вредоносной логики
+comp --> ai : искажение рекомендаций
+ai --> tcb : передача опасных RPM/подачи
+tcb --> sg : нарушение критичных ограничений
+
+note right of ai
+  Угрозы: изменение логики рекомендаций,
+  подмена данных sensor/torque
+end note
+
+@enduml

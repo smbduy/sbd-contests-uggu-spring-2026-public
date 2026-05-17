@@ -1,0 +1,26 @@
+@startuml isolation_architecture
+skinparam shadowing false
+title Асинхронная изоляция доменов через очереди
+
+rectangle "sensor_adapter\nнедоверенный домен" as Sensor
+rectangle "tcb_controller\nдоверенный домен" as Controller
+queue "inbox\nочередь входящих событий" as Inbox
+queue "outbox\nочередь результатов" as Outbox
+rectangle "рабочий цикл\nпроцесс домена" as Worker
+artifact "Event\nsource, destination,\noperation, parameters" as Event
+artifact "Result\nrequest_id, success,\nresult, error" as Result
+
+Sensor --> Event : создаёт событие
+Event --> Inbox : send(event)
+Inbox --> Worker : обработка входящего запроса
+Worker --> Controller : вызов операции домена
+Worker --> Result : формирование результата
+Result --> Outbox : публикация результата
+Sensor --> Outbox : receive(request_id)
+
+note bottom
+  Пример показывает только процессную изоляцию и асинхронный IPC.
+  Мандатный контроль доступа добавлен в references/secure_ipc.
+end note
+
+@enduml

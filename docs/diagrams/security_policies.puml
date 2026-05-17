@@ -1,0 +1,19 @@
+@startuml security_policies
+title Политики безопасности АБУ
+
+start
+:Запрос от домена;
+if (Политика глубины?) then (depth_m <= 200.0)
+  :OK;
+else (no)
+  :Violation;
+endif
+if (Политика оборотов?) then (rpm <= 400.0)
+  :OK;
+else (no)
+  :Violation;
+endif
+:Логирование события;
+:Ответ;
+stop
+@enduml

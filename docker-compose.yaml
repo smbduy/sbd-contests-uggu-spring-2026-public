@@ -1,0 +1,29 @@
+# Запуск: ./scripts/docker_up.sh  или  docker compose up -d
+services:
+  regulator:
+    build:
+      context: .
+      dockerfile: docker/regulator.Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      REGULATOR_COV_FAIL_UNDER: "60"
+
+  digital_mine:
+    build:
+      context: .
+      dockerfile: docker/digital_mine.Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - regulator
+    environment:
+      REGULATOR_URL: http://regulator:8082
+      CR_CERT_POLICY: permissive
+
+  abu:
+    build:
+      context: .
+      dockerfile: docker/abu.Dockerfile
+    ports:
+      - "8081:8081"

@@ -1,0 +1,20 @@
+@startuml certification_pipeline
+skinparam activity {
+  BackgroundColor #eef
+}
+title Пайплайн сертификации (прототип)
+
+start
+:Подготовка пакета\n(src_starting_point + SBOM + manifest);
+:POST заявка в Регулятор;
+:Проверка SBOM;
+:Песочница: venv + pytest --cov;
+if (покрытие >= порога?) then (да)
+  :Расчёт стоимости (полином);
+  :certificate_id = SHA-256(архива пакета);
+  :success = true;
+else (нет)
+  :success = false;
+endif
+stop
+@enduml

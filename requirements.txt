@@ -1,0 +1,6 @@
+# Устаревший список: источник зависимостей — Pipfile.
+# Экспорт при необходимости: pipenv requirements > requirements.txt
+# Для установки используйте: make install  или  ./scripts/bootstrap_pipenv.sh
+-r src_starting_point/requirements.txt
+pytest>=8.0.0,<9
+pytest-cov>=5.0.0,<7

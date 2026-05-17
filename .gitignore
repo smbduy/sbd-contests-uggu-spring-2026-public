@@ -1,0 +1,24 @@
+# Виртуальные окружения (единственно допустимое место для pip-пакетов)
+.venv/
+venv/
+env/
+.pipenv/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Артефакты сборки и сертификации
+artifacts/
+dist/
+
+# Прочее
+*.egg-info/
+.eggs/
+.vendor/
+
+# Локальные журналы АБУ (abu/event_log)
+var/

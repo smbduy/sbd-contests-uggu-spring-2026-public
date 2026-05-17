@@ -1,0 +1,25 @@
+@startuml tara_attack_api
+title TARA: путь атаки через компрометацию API / FastAPI
+
+actor Attacker as att
+boundary "HTTP API / FastAPI" as api
+component "app.py\n(прием команд, состояние миссии)" as app
+component "ДВБ АБУ\nконтроллер" as tcb
+usecase "SG_ADS_Controlled_operations" as sg
+
+att --> api : отправка вредоносного или некорректного запроса
+api --> app : некорректный payload / параметры
+app --> tcb : вызовы контроля и проверки
+tcb --> sg : нарушение ограничений
+
+note right of sg
+  damage: аварийные режимы,
+  неавторизованное бурение
+end note
+
+note right of api
+  Угрозы: уязвимости FastAPI,
+  подмена данных, обход валидации
+end note
+
+@enduml

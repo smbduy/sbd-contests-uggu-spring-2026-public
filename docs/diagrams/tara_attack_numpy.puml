@@ -1,0 +1,19 @@
+@startuml tara_attack_numpy
+title TARA: путь атаки через компрометацию numpy (упрощённо)
+
+actor Attacker as att
+boundary "Поставка ПО\n(SBOM_OTHER)" as sup
+component "numpy\n(библиотека)" as np
+component "ДВБ АБУ\nконтроллер" as tcb
+usecase "SG_ADS_Authorized_critical_commands" as sg
+
+att --> sup : подмена / supply chain
+sup --> np : зависимость
+np --> tcb : вызовы из\nдоверенного кода
+tcb --> sg : нарушение целостности\nкритичных команд\n(damage: авария,\nнеавторизованное бурение)
+
+note right of np
+  ISO/SAE 21434: активы,\nугрозы, пути атаки,\nоценка риска
+end note
+
+@enduml

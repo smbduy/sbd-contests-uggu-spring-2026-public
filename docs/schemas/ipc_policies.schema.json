@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-2020-12/schema",
+  "$id": "https://abu-contest/schemas/ipc_policies.schema.json",
+  "title": "ipc_policies",
+  "description": "Декларативный белый список междоменных IPC (монитор применяет default deny). Такой же объект кладётся в сертификационный пакет для Регулятора.",
+  "type": "object",
+  "required": ["schema_version", "allows"],
+  "properties": {
+    "schema_version": { "type": "integer", "minimum": 1 },
+    "allows": {
+      "type": "array",
+      "description": "Явные разрешения пар from→to; при отсутствии записи связь между разными доменами запрещена.",
+      "items": {
+        "type": "object",
+        "required": ["from", "to", "func"],
+        "properties": {
+          "from": { "type": "string" },
+          "to": { "type": "string" },
+          "func": {
+            "type": "string",
+            "description": "Имя вызываемой функции (как при медиаторе)."
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

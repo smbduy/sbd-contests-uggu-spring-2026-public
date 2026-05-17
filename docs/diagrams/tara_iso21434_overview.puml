@@ -1,0 +1,25 @@
+@startuml tara_iso21434_overview
+title ISO/SAE 21434 (упрощённо): активы, угрозы и меры для АБУ
+
+skinparam rectangle {
+  roundCorner 8
+}
+
+rectangle "Идентификация активов\nкоманды бурения\nтелеметрия\nжурнал / целостность" as assets #E8F4FC
+
+rectangle "Сценарии угроз\nподмена ПО / supply chain\nкомпрометация numpy (ДВБ)\nнедостоверная телеметрия" as threats #FFF4E6
+
+rectangle "Оценка риска\nвероятность × ущерб\n(damage: авария, обход лимитов)" as risk #F5E8FF
+
+rectangle "Меры\nразделение ДВБ / SBOM\nтесты безопасности\nсертификация Регулятора" as controls #E8F8E8
+
+assets -down-> threats : анализ
+threats -down-> risk : TARA
+risk -down-> controls : снижение риска
+controls -up-> assets : доверенное состояние
+
+note right of controls
+  Связь с ЦПБ: SG_*, SA_*\nи отчёт покрытия в Регуляторе
+end note
+
+@enduml

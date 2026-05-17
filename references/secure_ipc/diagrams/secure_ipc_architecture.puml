@@ -1,0 +1,31 @@
+@startuml secure_ipc_architecture
+skinparam shadowing false
+title Многослойный secure IPC
+
+rectangle "tcb_guard\nдоверенный домен 1" as Guard
+rectangle "tcb_audit\nдоверенный домен 2" as Audit
+rectangle "operator_ui\nнедоверенный домен 3" as UI
+
+queue "MonitorEventQueue\nобщая очередь монитора" as MonitorQueue
+rectangle "RouteMonitor\nформа Event + белый список" as Route
+rectangle "DomainGuard\nвыход + вход" as DomainGuard
+rectangle "ParameterGuard\nсемантика parameters" as ParameterGuard
+rectangle "MessageBroker\nмаршрутизация после проверок" as Broker
+queue "очередь целевого домена" as TargetQueue
+
+Guard --> MonitorQueue : Event
+UI --> MonitorQueue : Event
+MonitorQueue --> Route : проверка формы и маршрута
+Route --> DomainGuard : проверка локальных политик
+DomainGuard --> ParameterGuard : проверка параметров
+ParameterGuard --> Broker : событие разрешено
+Broker --> TargetQueue : доставка получателю
+TargetQueue --> Audit : append_event
+TargetQueue --> UI : render_notice
+
+note bottom
+  Каждый слой может заблокировать событие независимо.
+  Это снижает ущерб от компрометации одного домена или одной политики.
+end note
+
+@enduml

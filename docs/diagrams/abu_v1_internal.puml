@@ -1,0 +1,21 @@
+@startuml abu_v1_internal
+skinparam rectangle {
+  BackgroundColor #fff8e8
+}
+title АБУ v1 (намеренно без границы ДВБ / недоверенный код)
+
+rectangle "Процесс_AБУ" {
+  [FastAPI] as API
+  [Исполнитель_миссии] as EX
+  [ПсевдоИИ\nаномалия_режим_риск] as AI
+  [Проверки_безопасности\n(должны_в_ДВБ_на_этапе_2)] as SAFETY
+}
+
+API -down-> EX
+EX -down-> AI
+EX -down-> SAFETY
+note right of AI
+  В v1 всё в одном коде;
+  конкурсанты разделяют ДВБ
+end note
+@enduml

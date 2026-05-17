@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "allows": [
+    {"from": "tcb_guard", "to": "tcb_audit", "func": "append_event"},
+    {"from": "tcb_audit", "to": "tcb_guard", "func": "last_event"},
+    {"from": "operator_ui", "to": "tcb_audit", "func": "append_event"},
+    {"from": "tcb_audit", "to": "operator_ui", "func": "render_notice"}
+  ]
+}

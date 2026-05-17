@@ -1,0 +1,22 @@
+{
+  "security_goals": [
+    {
+      "id": "SG_ADS_Authorized_critical_commands",
+      "statement": "При любых обстоятельствах выполняются только авторизованные критичные команды"
+    },
+    {
+      "id": "SG_ADS_Controlled_operations",
+      "statement": "При любых обстоятельствах соблюдаются критичные ограничения"
+    },
+    {
+      "id": "SG_ADS_Security_events_store",
+      "statement": "При любых обстоятельствах сохраняются события безопасности"
+    }
+  ],
+  "security_assumptions": [
+    {
+      "id": "SA_ADS_Trustrworthy_authorized_operators",
+      "statement": "авторизованные сотрудники ЦР являются благонадёжными"
+    }
+  ]
+}
